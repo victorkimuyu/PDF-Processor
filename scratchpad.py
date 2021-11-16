@@ -11,11 +11,11 @@ def reports():
 def photos():
     return glob(photos_path + '/*.pdf')
 
-report_list = [" ".join(file.split('\\')[-2:]) for file in reports()]
+report_list = [" ".join(file.split('\\')[-1].split(" ")[-2:]) for file in reports()]
 photo_list = [file.split('\\')[-1] for file in photos()]
 
 
 flagged_reports = [file for file in report_list if (file.find("--") or file.find("=")) != -1]
 flagged_photos = [file for file in photo_list if (file.find("--") or file.find("=")) != -1]
 
-print(len(flagged_reports))
+print(flagged_reports)

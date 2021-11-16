@@ -51,12 +51,13 @@ def do_combine():
     for file in photos():
         photo_list.append(file.split('\\')[-1])
 
-    flagged_reports = [file for file in reports() if (
-        file.find("--") or file.find("==")) != -1]
-    flagged_photos = [file for file in photos() if (
-        file.find("--") or file.find("==")) != -1]
-    unmatched_reports = sorted(set(report_list).difference(photo_list))
-    unmatched_photos =  sorted(set(photo_list).difference(report_list))
+    def is_flagged(str):
+        return str.replace(".pdf", "").endswith("-") or str.replace(".pdf", "").endswith("=")
+
+    flagged_reports = [file for file in report_list if is_flagged(file)]
+    flagged_photos = [file for file in photo_list if is_flagged(file)]
+    unmatched_reports = [file for file in sorted(set(report_list).difference(photo_list)) if not is_flagged(file)]
+    unmatched_photos =  [file for file in sorted(set(photo_list).difference(report_list)) if not is_flagged(file)]
 
     if unmatched_reports:
         log_text += "\nReports without matching photos\n"
@@ -74,21 +75,24 @@ def do_combine():
         log_text += "\nFlagged reports found. Skipped.\n"
         print("\n" + str(len(flagged_reports)) +" Flagged reports found. Skipped.")
         for i in range(len(flagged_reports)):
-            log_text += str(i+1) + ". " + " ".join(flagged_reports[i].split('\\')[-2:]) + "\n"
+            print(f"{i+1}. {flagged_reports[i]}")
+            log_text += f"{i+1}. {flagged_reports[i]}\n"
 
     if flagged_photos:
         log_text += "\nFlagged photos found. Skipped.\n"
         print("\n"+str(len(flagged_photos)) + " Flagged photos found. Skipped.")
         for i in range(len(flagged_photos)):
-            log_text += str(i+1) + ". " + flagged_photos[i].split('\\')[-1] + "\n"
+            print(f"{i+1}. {flagged_photos[i]}")
+            log_text += f"{i+1}. {flagged_photos[i]}\n"
 
     photo_set = []
     report_set = []
 
+
     for report in reports():
-        if not report in flagged_reports:
+        if not is_flagged(report):
             for photo in photos():
-                if not photo in flagged_photos:
+                if not is_flagged(photo):
                     if report.find(photo.split("\\")[-1].split('.')[0]) > -1:
                         report_set.append(report)
                         photo_set.append(photo)
@@ -155,30 +159,30 @@ def do_combine():
         new_name = dest_folder + "/" + folios[i] + ". " + clean_report_name
         os.rename(combined[i], new_name)
 
-    print("\nCreating fleet binder...")
-    log_text += "\nCreating fleet binder..."
-    combined = glob.glob(dest_folder + "/*.pdf")
-    binder = PdfFileMerger()
-    for i in range(len(combined)):
-        binder.append(sorted(combined)[i])
-    binder.write(dest_folder + "/Fleet.temp.pdf")
-    binder.close()
+    # print("\nCreating fleet binder...")
+    # log_text += "\nCreating fleet binder..."
+    # combined = glob.glob(dest_folder + "/*.pdf")
+    # binder = PdfFileMerger()
+    # for i in range(len(combined)):
+    #     binder.append(sorted(combined)[i])
+    # binder.write(dest_folder + "/Fleet.temp.pdf")
+    # binder.close()
 
-    with plumber.open(dest_folder + "/Fleet.temp.pdf") as pdf:
-        fleet_binder = PdfFileMerger()
-        fleet_binder.append(dest_folder + "/Fleet.temp.pdf")
-        for page in pdf.pages:
-            content = page.extract_text()
-            for line in content.split("\n"):
-                if line.startswith("Reg. No. "):
-                    the_reg_no = line.split(" Steering ")[0].lstrip(
-                        "Reg. No. ")
-                    the_page = pdf.pages.index(page)
-                    fleet_binder.addBookmark(the_reg_no, the_page)
-        fleet_binder.write(dest_folder + "/Fleet Binder.pdf")
-        fleet_binder.close()
+    # with plumber.open(dest_folder + "/Fleet.temp.pdf") as pdf:
+    #     fleet_binder = PdfFileMerger()
+    #     fleet_binder.append(dest_folder + "/Fleet.temp.pdf")
+    #     for page in pdf.pages:
+    #         content = page.extract_text()
+    #         for line in content.split("\n"):
+    #             if line.startswith("Reg. No. "):
+    #                 the_reg_no = line.split(" Steering ")[0].lstrip(
+    #                     "Reg. No. ")
+    #                 the_page = pdf.pages.index(page)
+    #                 fleet_binder.addBookmark(the_reg_no, the_page)
+    #     fleet_binder.write(dest_folder + "/Fleet Binder.pdf")
+    #     fleet_binder.close()
 
-    os.remove(dest_folder + "/Fleet.temp.pdf")
+    # os.remove(dest_folder + "/Fleet.temp.pdf")
 
     now_str = now().strftime("%I:%M:%S%p")
 
@@ -213,7 +217,7 @@ def do_combine():
     log_file.close()
 
     os.startfile(os.path.realpath(dest_folder + "/"))
-    os.startfile(os.path.realpath(dest_folder + "/Fleet Binder.pdf"))
+    # os.startfile(os.path.realpath(dest_folder + "/Fleet Binder.pdf"))
     time.sleep(2)
     os.startfile(
         os.path.realpath(
@@ -235,6 +239,5 @@ suffix = str(math.radians(suffix_source))[-4:][::-1]
 
 
 # exec_combine()
-
 
 do_combine()
